@@ -80,11 +80,13 @@ import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -505,6 +507,96 @@ public class OrderServiceTest extends BaseContextSensitiveTest {
 	@Test
 	public void getActiveDrugOrdersByPatient_shouldFailIfPatientIsNull() {
 		assertThrows(IllegalArgumentException.class, () -> orderService.getActiveDrugOrdersByPatient(null));
+	}
+
+	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldNotReturnNonDrugOrders() {
+		Patient patient = patientService.getPatient(2);
+		assertTrue(orderService.getActiveOrders(patient, null, null, null).contains(orderService.getOrder(7)));
+
+		List<DrugOrder> drugOrders = orderService.getActiveDrugOrdersByPatient(patient);
+
+		assertFalse(drugOrders.contains(orderService.getOrder(7)));
+		for (Order order : drugOrders) {
+			assertThat(order, instanceOf(DrugOrder.class));
+		}
+	}
+
+	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldReturnActiveDrugOrdersAcrossAllCareSettings() {
+		Patient patient = patientService.getPatient(2);
+		Order outpatientOrder = orderService.getOrder(3);
+		Order inpatientOrder = orderService.getOrder(222);
+		assertNotEquals(outpatientOrder.getCareSetting(), inpatientOrder.getCareSetting());
+
+		List<DrugOrder> drugOrders = orderService.getActiveDrugOrdersByPatient(patient);
+
+		assertThat(drugOrders, hasItems((DrugOrder) outpatientOrder, (DrugOrder) inpatientOrder));
+	}
+
+	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldNotReturnStoppedOrDiscontinuationDrugOrders() {
+		Patient patient = patientService.getPatient(2);
+
+		List<DrugOrder> drugOrders = orderService.getActiveDrugOrdersByPatient(patient);
+
+		assertFalse(drugOrders.contains(orderService.getOrder(2)));
+		assertFalse(drugOrders.contains(orderService.getOrder(22)));
+		assertFalse(drugOrders.contains(orderService.getOrder(4)));
+		assertFalse(drugOrders.contains(orderService.getOrder(44)));
+	}
+
+	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldReturnAnEmptyListIfThePatientHasNoActiveDrugOrders() {
+		Patient patient = patientService.getPatient(6);
+
+		List<DrugOrder> drugOrders = orderService.getActiveDrugOrdersByPatient(patient);
+
+		assertNotNull(drugOrders);
+		assertTrue(drugOrders.isEmpty());
+	}
+
+	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldNotReturnADrugOrderAfterItIsDiscontinued() {
+		Patient patient = patientService.getPatient(7);
+		Order order = orderService.getOrderByOrderNumber("111");
+		assertThat(orderService.getActiveDrugOrdersByPatient(patient), contains((DrugOrder) order));
+
+		orderService.discontinueOrder(order, "Stopped", new Date(), providerService.getProvider(1),
+		    encounterService.getEncounter(3));
+
+		assertTrue(orderService.getActiveDrugOrdersByPatient(patient).isEmpty());
+	}
+
+	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldNotReturnVoidedDrugOrders() {
+		Patient patient = patientService.getPatient(2);
+		Order order = orderService.getOrder(3);
+		assertTrue(orderService.getActiveDrugOrdersByPatient(patient).contains(order));
+
+		orderService.voidOrder(order, "Entered in error");
+
+		List<DrugOrder> drugOrders = orderService.getActiveDrugOrdersByPatient(patient);
+		assertFalse(drugOrders.contains(order));
+		assertEquals(3, drugOrders.size());
 	}
 
 	/**

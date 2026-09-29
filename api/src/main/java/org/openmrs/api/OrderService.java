@@ -441,7 +441,13 @@ public interface OrderService extends OpenmrsService {
 	 * the call are returned.
 	 * <p>
 	 * <strong>Should</strong> return all active drug orders for the specified patient<br/>
-	 * <strong>Should</strong> fail if patient is null
+	 * <strong>Should</strong> fail if patient is null<br/>
+	 * <strong>Should</strong> not return non drug orders<br/>
+	 * <strong>Should</strong> return active drug orders across all care settings<br/>
+	 * <strong>Should</strong> not return stopped or discontinuation drug orders<br/>
+	 * <strong>Should</strong> return an empty list if the patient has no active drug orders<br/>
+	 * <strong>Should</strong> not return a drug order after it is discontinued<br/>
+	 * <strong>Should</strong> not return voided drug orders
 	 *
 	 * @param patient the patient
 	 * @return the currently active drug orders for the patient
