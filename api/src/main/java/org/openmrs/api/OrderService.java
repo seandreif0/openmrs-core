@@ -16,6 +16,7 @@ import java.util.Locale;
 import org.openmrs.CareSetting;
 import org.openmrs.Concept;
 import org.openmrs.ConceptClass;
+import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
 import org.openmrs.Order;
 import org.openmrs.OrderAttribute;
@@ -431,6 +432,23 @@ public interface OrderService extends OpenmrsService {
 	 */
 	@Authorized(PrivilegeConstants.GET_ORDERS)
 	public List<Order> getActiveOrders(Patient patient, OrderType orderType, CareSetting careSetting, Date asOfDate);
+
+	/**
+	 * Gets the currently active drug orders for the specified patient across all care settings. This is
+	 * a convenience method equivalent to calling
+	 * {@link #getActiveOrders(Patient, OrderType, CareSetting, Date)} with the Drug Order OrderType, a
+	 * null careSetting and a null asOfDate (i.e. as of now). Only orders that are active at the time of
+	 * the call are returned.
+	 * <p>
+	 * <strong>Should</strong> return all active drug orders for the specified patient<br/>
+	 * <strong>Should</strong> fail if patient is null
+	 *
+	 * @param patient the patient
+	 * @return the currently active drug orders for the patient
+	 * @since 3.0.0
+	 */
+	@Authorized(PrivilegeConstants.GET_ORDERS)
+	public List<DrugOrder> getActiveDrugOrdersByPatient(Patient patient);
 
 	/**
 	 * Retrieve care setting

@@ -485,6 +485,29 @@ public class OrderServiceTest extends BaseContextSensitiveTest {
 	}
 
 	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldReturnAllActiveDrugOrdersForTheSpecifiedPatient() {
+		Patient patient = patientService.getPatient(2);
+		List<DrugOrder> drugOrders = orderService.getActiveDrugOrdersByPatient(patient);
+		assertEquals(4, drugOrders.size());
+		Order[] expectedOrders = { orderService.getOrder(222), orderService.getOrder(3), orderService.getOrder(444),
+		        orderService.getOrder(5) };
+		assertThat(drugOrders, containsInAnyOrder(expectedOrders));
+		assertThat(drugOrders,
+		    containsInAnyOrder(orderService.getActiveOrders(patient, orderService.getOrderType(1), null, null).toArray()));
+	}
+
+	/**
+	 * @see OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Test
+	public void getActiveDrugOrdersByPatient_shouldFailIfPatientIsNull() {
+		assertThrows(IllegalArgumentException.class, () -> orderService.getActiveDrugOrdersByPatient(null));
+	}
+
+	/**
 	 * @see OrderService#getActiveOrders(org.openmrs.Patient, org.openmrs.OrderType,
 	 *      org.openmrs.CareSetting, java.util.Date)
 	 */
