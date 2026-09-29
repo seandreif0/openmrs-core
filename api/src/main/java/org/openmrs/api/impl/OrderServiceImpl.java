@@ -724,6 +724,22 @@ public class OrderServiceImpl extends BaseOpenmrsService implements OrderService
 	}
 
 	/**
+	 * @see org.openmrs.api.OrderService#getActiveDrugOrdersByPatient(org.openmrs.Patient)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<DrugOrder> getActiveDrugOrdersByPatient(Patient patient) {
+		OrderType drugOrderType = getDefaultOrderType(DrugOrder.class, OrderType.DRUG_ORDER_TYPE_UUID);
+		List<DrugOrder> drugOrders = new ArrayList<>();
+		for (Order order : getActiveOrders(patient, drugOrderType, null, null)) {
+			if (order instanceof DrugOrder) {
+				drugOrders.add((DrugOrder) order);
+			}
+		}
+		return drugOrders;
+	}
+
+	/**
 	 * @see org.openmrs.api.OrderService#getActiveOrders(org.openmrs.Patient, org.openmrs.Visit,
 	 *      org.openmrs.OrderType, org.openmrs.CareSetting, java.util.Date)
 	 */
